@@ -1,0 +1,29 @@
+{
+	"name": "universities-gochas-bot",
+	"version": "1.0.0",
+	"description": "Busca la carrera que tanto quieres en las universidades de San Cristobal",
+	"main": "index.js",
+	"scripts": {
+		"start": "nodemon ."
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/jesusorejarena/universities-gochas-bot.git"
+	},
+	"author": "Jesus Orejarena, David Lozada",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/jesusorejarena/universities-gochas-bot/issues"
+	},
+	"homepage": "https://github.com/jesusorejarena/universities-gochas-bot#readme",
+	"devDependencies": {
+		"nodemon": "^2.0.7"
+	},
+	"dependencies": {
+		"dotenv": "^10.0.0",
+		"express": "^4.17.1",
+		"node-telegram-bot-api": "^0.53.0",
+		"pg": "^8.6.0",
+		"sequelize": "^6.6.2"
+	}
+}
