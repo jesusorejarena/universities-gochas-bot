@@ -16,30 +16,31 @@ app.get('/', (req, res) => res.send('Hola'));
 const bot = new TelegramBot(process.env.KEY_TELEGRAM, { polling: true });
 
 /* --------------- Inicio --------------- */
-
 bot.onText(/\/start/, async (msg) => {
 	bot.sendMessage(
 		msg.from.id,
-		`Hola ${msg.from.first_name}, bienvenido soy 'Gocho Estudios' un bot que fue diseñado para ayudarte a buscar esa carrera universitaria que siempre quisiste estudiar en San Cristóbal, para triunfar en el mundo laboral.`
+		`Bienvenido ${msg.from.first_name}, me llamo GochoEstudios y soy un bot diseñado para ayudarte en la búsqueda de esa carrera universitaria que siempre quisiste estudiar ¡aquí en San Cristóbal!`
 	);
 
-	bot.sendMessage(
-		msg.from.id,
-		`${msg.from.first_name}, para empezar usa este comando para mostrarte algunas de las universidades que hay en gochilandia /universidades.`
-	);
+	setTimeout(() => {
+		bot.sendMessage(
+			msg.from.id,
+			`Bien ${msg.from.first_name} ¿te parece si nos ponemos manos a la obra? Para comenzar solo debes usar este comando para que te enseñe las universidades más importantes que existen en San Cristóbal /universidades`
+		);
+	}, 1000);
 });
 
 /* --------------- Universidades --------------- */
-
 bot.onText(/\/(?:universidades)/gi, async (msg) => {
 	bot.sendMessage(
 		msg.from.id,
-		`Muy bien ${msg.from.first_name}, aqui hay algunas universidades que tengo almacenadas en mi base de datos. *PRESIONA LAS SIGLAS PARA MAS INFORMACIÓN*.`,
+		`¡Oye ${msg.from.first_name}! ¡echa un vistazo a las universidades que he conseguido especialmente para ti! Si te interesa alguna solo debes presionar sus siglas para obtener más información.`,
 		{ parse_mode: 'Markdown' }
 	);
-
+	// Obtiene las universidades de la base de datos
 	const universities = await getUniversitiesAll();
 
+	// hace un siclo para luego mostrarlas en el mensaje
 	const data = universities.map(
 		(university) => `\n*Siglas*: /${university.sig_uni} \n*Nombre*: ${university.nam_uni}\n`
 	);
@@ -104,10 +105,10 @@ bot.onText(/\/(?:ULA)/gi, async (msg) => {
 /* --------------- Funciones --------------- */
 
 async function universityById(siglas, msg) {
+	// Busca la informacion de la universidad segun las siglas que presiono
 	const university = await getUniversityById(siglas);
 
 	/* --------------- Descripcion e imagen --------------- */
-
 	if (university.img_uni !== '') {
 		bot.sendPhoto(msg.from.id, university.img_uni, {
 			caption: `\n*Siglas*: ${university.sig_uni} \n*Nombre*: ${university.nam_uni} \n*Tipo*: ${university.tip_uni} \n*URL*: ${university.url_uni} \n*Descripción*: ${university.des_uni}`,
@@ -122,9 +123,9 @@ async function universityById(siglas, msg) {
 	}
 
 	/* --------------- Ubicacion o Carreras --------------- */
-
 	setTimeout(() => {
-		bot.sendMessage(msg.from.id, `Mas información sobre el ${university.sig_uni}?`, {
+		// Muestra las opciones para obtener mas informacion sobre la universidad
+		bot.sendMessage(msg.from.id, `¡Se ve interesante! ¿Deseas más información sobre el/la ${university.sig_uni}...`, {
 			reply_markup: {
 				inline_keyboard: [
 					[
@@ -136,23 +137,23 @@ async function universityById(siglas, msg) {
 			},
 		});
 
+		// Realiza una opcion segun los botones que se hayan presionado
 		bot.on('callback_query', async (actionButton) => {
 			if (actionButton.data == 'Ubicacion') {
 				/* --------------- Ubicacion --------------- */
 				bot.sendMessage(msg.from.id, `\n*Dirección*: ${university.add_uni}`, { parse_mode: 'Markdown' });
 				if (university.lat_uni !== '') bot.sendLocation(msg.chat.id, university.lat_uni, university.lon_uni);
-				setTimeout(() => {
-					repeat(university, msg);
-				}, 1000);
 			} else if (actionButton.data == 'Correo') {
 				/* --------------- Correo --------------- */
 				bot.sendMessage(
 					msg.from.id,
-					`Muy bien ${msg.from.first_name}, pasame tu correo para enviarte la información de la universidad y las carreras.`,
+					`Hey ${msg.from.first_name}... ¿qué tal si me das tu correo? ¡No me malinterpretes! Es solo para enviarte la información de la universidad que has seleccionado.`,
 					{ parse_mode: 'Markdown' }
 				);
 
+				// Espera el ingreso del correo
 				bot.on('message', async function (msg) {
+					// Busca los programas de la universidad
 					const programs = await getProgramsByUni(university.cod_uni, '');
 
 					const data = {
@@ -164,42 +165,35 @@ async function universityById(siglas, msg) {
 					const correoExpresion =
 						/[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
 
+					// Valida el correo
 					if (correoExpresion.test(msg.text)) {
 						try {
 							await sendEmail(data);
 							bot.sendMessage(msg.from.id, 'Correo enviado exitosamente.');
-							setTimeout(() => {
-								repeat(university, msg);
-							}, 1000);
 						} catch (error) {
 							bot.sendMessage(msg.from.id, 'Hubo un fallo al enviar el correo con los datos.');
-							setTimeout(() => {
-								repeat(university, msg);
-							}, 1000);
 						}
-					} else {
-						bot.sendMessage(msg.from.id, 'El correo que ingreso no es valido, vuelva a intentarlo.');
-						setTimeout(() => {
-							repeat(university, msg);
-						}, 1000);
 					}
 				});
 			} else if (actionButton.data == 'Carreras') {
 				/* --------------- Carreras --------------- */
-				bot.sendMessage(msg.from.id, `¿Cual es la duración de la carrera que te gustaria estudiar?`, {
-					reply_markup: {
-						inline_keyboard: [
-							[
-								{ text: 'Corta', callback_data: 'Corta' },
-								{ text: 'Larga', callback_data: 'Larga' },
-								{ text: 'Sin info', callback_data: 'No Aplica' },
-								{ text: 'Todas', callback_data: 'Todas' },
+				bot.sendMessage(
+					msg.from.id,
+					`¿Deseas estudiar una carrera universitaria corta o larga? Recuerda que hay algunas que tienen información limitada...`,
+					{
+						reply_markup: {
+							inline_keyboard: [
+								[
+									{ text: 'Corta', callback_data: 'Corta' },
+									{ text: 'Larga', callback_data: 'Larga' },
+									{ text: 'Sin info', callback_data: 'No Aplica' },
+									{ text: 'Todas', callback_data: 'Todas' },
+								],
 							],
-						],
-					},
-				});
+						},
+					}
+				);
 				/* --------------- Tipos de carreras --------------- */
-
 				bot.on('callback_query', async (actionButton) => {
 					if (actionButton.data == 'Corta') {
 						programsByUni(university.cod_uni, actionButton.data, msg);
@@ -213,15 +207,14 @@ async function universityById(siglas, msg) {
 				});
 			}
 		});
-	}, 2000);
+	}, 1000);
 
 	/* --------------- Carreras segun tipo --------------- */
-
 	async function programsByUni(id, type, msg) {
+		// Busca las carreras que hay disponible segun la duracion
 		const programs = await getProgramsByUni(id, type);
 
 		let data;
-
 		if (programs.length > 0) {
 			data = programs.map(
 				(program) => `\n*Nombre*: ${program.nam_pro} \n*Tipo*: ${program.tip_pro} \n*Duración*: ${program.dur_pro} \n`
@@ -230,37 +223,7 @@ async function universityById(siglas, msg) {
 			data = `*No hay carreras.*`;
 		}
 
+		// Envia los datos que se obtuvieron
 		bot.sendMessage(msg.from.id, `${data}`, { parse_mode: 'Markdown' });
-
-		setTimeout(() => {
-			repeat(university, msg);
-		}, 1000);
-	}
-
-	async function repeat(university, msg) {
-		bot.sendMessage(msg.from.id, `¿Que quieres volver a intentar?`, {
-			reply_markup: {
-				inline_keyboard: [
-					[
-						{ text: 'Repetir', callback_data: 'Repetir' },
-						{ text: 'Ver universidades', callback_data: 'Universidades' },
-					],
-				],
-			},
-		});
-
-		bot.on('callback_query', async (actionButton) => {
-			if (actionButton.data == 'Repetir') {
-				bot.sendMessage(
-					msg.from.id,
-					`${msg.from.first_name}, para repetir las preguntas del /${university.sig_uni} presiona ese comando.`
-				);
-			} else if (actionButton.data == 'Universidades') {
-				bot.sendMessage(
-					msg.from.id,
-					`${msg.from.first_name}, para volver a ver las /universidades presiona ese comando.`
-				);
-			}
-		});
 	}
 }

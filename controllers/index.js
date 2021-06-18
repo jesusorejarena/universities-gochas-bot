@@ -3,21 +3,14 @@ const { Programs } = require('../models/programs.model');
 
 const { Op } = require('sequelize');
 
-exports.getProgramsAll = async () => {
-	try {
-		const programs = await Programs.findAll();
-		return programs;
-	} catch (err) {
-		return `Error in get data in database:${err.message}`;
-	}
-};
+/* Universidades */
 
 exports.getUniversitiesAll = async () => {
 	try {
 		const universities = await Universities.findAll();
 		return universities;
 	} catch (err) {
-		return `Error in get data in database:${err.message}`;
+		return `Error al obtener los datos de la base de datos.`;
 	}
 };
 
@@ -28,9 +21,11 @@ exports.getUniversityById = async (siglas) => {
 		});
 		return university;
 	} catch (err) {
-		return `Error in get data in database:${err.message}`;
+		return `Error al obtener los datos de la base de datos.`;
 	}
 };
+
+/* Programas universitarios */
 
 exports.getProgramsByUni = async (id, type) => {
 	try {
@@ -39,6 +34,6 @@ exports.getProgramsByUni = async (id, type) => {
 		});
 		return programs;
 	} catch (err) {
-		return `Error in get data in database:${err.message}`;
+		return `Error al obtener los datos de la base de datos.`;
 	}
 };
